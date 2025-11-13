@@ -5,7 +5,7 @@
 </h2>
 
 <h2 align="center">
-   ỨNG DỤNG QUẢN LÝ KHO Y TẾ XÃ (WMS_YTE_XA_AI)
+   HỆ THỐNG QUẢN LÝ NHÂN VIÊN LÀM VIỆC TỪ XA CÔNG TY THÀNH ĐÔ
 </h2>
 
 <div align="center">
