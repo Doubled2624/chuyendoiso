@@ -1,58 +1,117 @@
-// Seed data + model helpers (Departments + helpers)
-const Roles = { ADMIN: 'admin', EMP: 'employee' };
-const Departments = ['Kinh doanh','Kỹ thuật','Nhân sự','Kế toán'];
+// assets/js/data.js
+// Mô phỏng CSDL phía client bằng localStorage
 
-function uid(){ return Math.random().toString(36).slice(2, 10); }
-function todayISO(){ const d=new Date(); d.setHours(0,0,0,0); return d.toISOString(); }
-function nowISO(){ return new Date().toISOString(); }
+const DB = (() => {
+  const K_USERS = 'td_users';
+  const K_TASKS = 'td_tasks';
+  const K_ATT = 'td_attendance';
+  const K_PAYROLL_SETTINGS = 'td_payroll_settings';
+  const K_PAYROLL_RUNS = 'td_payroll_runs';
 
-function initSeed(){
-  if(!Store.has('users')){
-    const users = [
-      { id: uid(), email:'admin@thanhdo.com', name:'Quản trị hệ thống', role:Roles.ADMIN, dept:'Nhân sự', active:true, password:'admin123' },
-      { id: uid(), email:'nhanviena@thanhdo.com', name:'Nhân viên A', role:Roles.EMP, dept:'Kỹ thuật', active:true, password:'123456' },
-      { id: uid(), email:'nhanvienb@thanhdo.com', name:'Nhân viên B', role:Roles.EMP, dept:'Kinh doanh', active:true, password:'123456' },
-    ];
-    const tasks = [
-      { id: uid(), title:'Chuẩn bị báo cáo tuần', desc:'Tổng hợp KPI tuần này', assignedTo: users[1].id, status:'todo', due: new Date(Date.now()+86400000).toISOString() },
-      { id: uid(), title:'Kiểm tra dữ liệu chấm công', desc:'Đối soát log check-in/out', assignedTo: users[2].id, status:'inprogress', due: new Date(Date.now()+2*86400000).toISOString() }
-    ];
-    Store.set('users', users);
-    Store.set('tasks', tasks);
-    Store.set('attendance', []);
-    Store.set('session', null);
+  function load(key, def) {
+    return Storage.loadJSON(key, def);
   }
-}
 
-const DB = {
-  payrollSettings: () => Store.get('payroll_settings', {}),
-  savePayrollSettings: (map) => Store.set('payroll_settings', map),
+  function save(key, value) {
+    Storage.saveJSON(key, value);
+  }
 
-  payrollRuns: () => Store.get('payroll_runs', []),
-  savePayrollRuns: (list) => Store.set('payroll_runs', list),
+  return {
+    // ===== Users =====
+    users() {
+      return load(K_USERS, []);
+    },
+    saveUsers(list) {
+      save(K_USERS, list);
+    },
 
-  users(){ return Store.get('users', []); },
-  saveUsers(list){ Store.set('users', list); },
-  tasks(){ return Store.get('tasks', []); },
-  saveTasks(list){ Store.set('tasks', list); },
-  attendance(){ return Store.get('attendance', []); },
-  saveAttendance(list){ Store.set('attendance', list); },
-  session(){ return Store.get('session', null); },
-  saveSession(s){ Store.set('session', s); }
+    // ===== Tasks =====
+    tasks() {
+      return load(K_TASKS, []);
+    },
+    saveTasks(list) {
+      save(K_TASKS, list);
+    },
 
-};
+    // ===== Attendance =====
+    attendance() {
+      return load(K_ATT, []);
+    },
+    saveAttendance(list) {
+      save(K_ATT, list);
+    },
 
-initSeed();
-// NEW: payroll settings mặc định + kho kỳ lương
-const payroll_settings = {};
-users.forEach(u => {
-  payroll_settings[u.id] = {
-    baseSalary: u.role === Roles.ADMIN ? 15000000 : 10000000,
-    hourlyRate: 40000,
-    otMultiplier: 1.5,
-    allowance: 500000,
-    deduction: 0
+    // ===== Payroll =====
+    payrollSettings() {
+      return load(K_PAYROLL_SETTINGS, {});
+    },
+    savePayrollSettings(v) {
+      save(K_PAYROLL_SETTINGS, v);
+    },
+
+    payrollRuns() {
+      return load(K_PAYROLL_RUNS, []);
+    },
+    savePayrollRuns(v) {
+      save(K_PAYROLL_RUNS, v);
+    },
+
+    // ===== Seed dữ liệu mẫu =====
+    initSeed() {
+      const users = this.users();
+      if (!users.length) {
+        const admin = {
+          id: 'u_admin',
+          name: 'Quản trị hệ thống',
+          email: 'admin@thanhdo.local',
+          password: 'admin123',
+          role: Roles.ADMIN,
+          dept: 'Nhân sự',
+          active: true
+        };
+
+        const nvA = {
+          id: 'u_a',
+          name: 'Nhân viên A',
+          email: 'a@thanhdo.local',
+          password: '123456',
+          role: Roles.EMPLOYEE,
+          dept: 'Kỹ thuật',
+          active: true
+        };
+
+        const nvB = {
+          id: 'u_b',
+          name: 'Nhân viên B',
+          email: 'b@thanhdo.local',
+          password: '123456',
+          role: Roles.EMPLOYEE,
+          dept: 'Kinh doanh',
+          active: true
+        };
+
+        this.saveUsers([admin, nvA, nvB]);
+      }
+
+      if (!this.tasks().length) {
+        this.saveTasks([]);
+      }
+
+      if (!this.attendance().length) {
+        this.saveAttendance([]);
+      }
+
+      if (!Object.keys(this.payrollSettings() || {}).length) {
+        this.savePayrollSettings({
+          defaultBaseSalary: 10000000,
+          workHoursPerDay: 8,
+          otMultiplier: 1.5
+        });
+      }
+
+      if (!this.payrollRuns().length) {
+        this.savePayrollRuns([]);
+      }
+    }
   };
-});
-Store.set('payroll_settings', payroll_settings);
-Store.set('payroll_runs', []);
+})();

@@ -1,19 +1,57 @@
-// Authentication + RBAC
+// assets/js/auth.js
+
+const Roles = {
+  ADMIN: 'admin',
+  EMPLOYEE: 'employee'
+};
+
+const SESSION_KEY = 'td_session';
+
 const Auth = {
-  login(email, password){
-    const u = DB.users().find(x=>x.email===email && x.active!==false);
-    if(!u) return { ok:false, msg:'Email không tồn tại hoặc tài khoản bị khoá' };
-    if(u.password!==password) return { ok:false, msg:'Mật khẩu không đúng' };
-    const session = { userId: u.id, ts: nowISO() };
-    DB.saveSession(session);
-    return { ok:true, user:u };
+  me() {
+    const sess = Storage.loadJSON(SESSION_KEY, null);
+    if (!sess || !sess.userId) return null;
+    const users = DB.users();
+    return users.find(u => u.id === sess.userId) || null;
   },
-  logout(){ DB.saveSession(null); },
-  me(){ const s=DB.session(); if(!s) return null; return DB.users().find(u=>u.id===s.userId)||null; },
-  require(role){
-    const me=this.me();
-    if(!me) return false;
-    if(role===Roles.ADMIN) return me.role===Roles.ADMIN;
-    return true;
+
+  login(email, password) {
+    const users = DB.users();
+    const u = users.find(
+      x =>
+        x.email === email.trim() &&
+        x.password === password &&
+        x.active !== false
+    );
+
+    if (!u) {
+      return {
+        ok: false,
+        msg: 'Sai email hoặc mật khẩu, hoặc tài khoản đã bị khoá.'
+      };
+    }
+
+    Storage.saveJSON(SESSION_KEY, { userId: u.id });
+
+    if (window.Device) {
+      try {
+        Device.ping(u);
+      } catch (e) {
+        console.warn('Device ping error:', e);
+      }
+    }
+
+    return { ok: true, user: u };
+  },
+
+  logout() {
+    Storage.remove(SESSION_KEY);
+  },
+
+  require(role) {
+    const me = this.me();
+    if (!me) return false;
+    if (!role) return true;
+    return me.role === role;
   }
 };
