@@ -304,12 +304,10 @@ body {
   border-radius: 14px;
   border: 1px dashed var(--border);
 }
-.kpi strong { font-size: 22px; }
 
-/* Table */
-.table {
-  width: 100%;
-  border-collapse: collapse;
+.flex {
+  display: flex;
+  gap: 6px;
 }
 .table th, .table td {
   padding: 10px 8px;
